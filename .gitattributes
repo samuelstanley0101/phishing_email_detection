@@ -1,0 +1,14 @@
+source-datasets/TREC-07.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Assassin.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/CEAS-08.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Enron.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Ling.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/TREC-05.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/TREC-06.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/CEAS-08_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/Enron_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/Ling_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/TREC-05_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/TREC-06_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/TREC-07_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text
+source-datasets/Vectorized/Assassin_vectorized_data.csv filter=lfs diff=lfs merge=lfs -text

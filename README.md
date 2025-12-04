@@ -4,4 +4,4 @@ Datasets obtained from https://figshare.com/articles/dataset/Seven_Phishing_Emai
 
 Download this repository with `git clone https://github.com/samuelstanley0101/phishing_email_detection`
 
-Note that you must have `git-lfs` installed to download the dataset.
+Note that you must have [git-lfs](https://git-lfs.com/) installed to download the dataset.

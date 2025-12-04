@@ -2,9 +2,14 @@
 
 import argparse
 import os
-import sys
+import random
+import numpy as np
+import pandas as pd
 
 DEFAULT_DATASETS_DIR = "source-datasets"
+kSEED = 0
+
+random.seed(kSEED)
 
 def get_files_in_dir(dir: str, recursive: bool = False):
     files = []
@@ -28,6 +33,7 @@ if __name__ == "__main__":
     subset_size_parser.add_argument("--examples", "-E", type=int, help="Number of examples in the subset")
     subset_size_parser.add_argument("--percent", "-P", type=float, help="Percent of source dataset(s) to include in subset")
     argparser.add_argument("-r", action="store_true", dest="recursive", help="Add all files in directories specified recursively")
+    argparser.add_argument("--outfile", "-O", type=str, required=True, help="File to write resulting subset to")
     argparser.add_argument("files", nargs="*", help="Files and/or directories to use")
     args = argparser.parse_args()
 
@@ -46,5 +52,18 @@ if __name__ == "__main__":
             files.extend(get_files_in_dir(file, args.recursive))
         elif os.path.isfile(file):  # add file to list if file exists
             files.append(file)
-    
-    
+
+    print(files) #DEBUG
+
+    # len(df.index)
+    for file in files:
+        dataset = pd.read_csv(file, lineterminator='\n')
+        positive_labels = dataset[dataset.label == 1].shape[0]
+        negative_labels = dataset[dataset.label == 0].shape[0]
+        print(f"dataset {os.path.basename(file)} has {positive_labels} positive and {negative_labels} negative examples")
+
+    # create outfile
+    outfile = os.open(args.outfile, flags=(os.O_WRONLY | os.O_CREAT))
+
+    # close outfile
+    os.close(outfile)

@@ -7,7 +7,7 @@ import random
 import typing
 import math
 import pandas as pd
-from sklearn.model_selection import StratifiedShuffleSplit
+#from sklearn.model_selection import StratifiedShuffleSplit
 
 DEFAULT_DATASETS_DIR = "source-datasets"
 kSEED = 0
@@ -83,6 +83,10 @@ if __name__ == "__main__":
     argparser.add_argument("files", nargs="*", help="Files and/or directories to use")
     args = argparser.parse_args()
 
+    # temporarily raise exception for --examples argument
+    if args.examples:
+        raise NotImplementedError("Error: --examples argument is not yet implemented")
+
     # add datasets to args.files if no files supplied
     if len(args.files) == 0:
         datasets = os.listdir(DEFAULT_DATASETS_DIR)
@@ -112,53 +116,58 @@ if __name__ == "__main__":
         full_dataset_length += len(dataset.index)
         full_dataset_positive_examples += num_positive_examples(dataset)
 
-    # create stratified (representative) splitter object
-    if args.examples:  # transform number of examples into percent
-        subset_percent = float(args.examples) / full_dataset_length
-    else:
-        subset_percent = args.percent
-        print(f"subset_percent is {subset_percent}") #DEBUG
-    sss = StratifiedShuffleSplit(
-        n_splits=1,                 # number of splits (subsets) needed
-        train_size=subset_percent,  # percent of examples in subset. train_size is a percent if it's a float
-        test_size=1,
-        random_state=kSEED)         # random seed for consistency
-    
     # generate subset
     subset = pd.DataFrame()
     for file in files:
         dataset = pd.read_csv(file, lineterminator='\n')
-        # get training data split
-        train_idx, _ = next(sss.split(dataset, dataset["label"]))
-        temp_subset = dataset.loc[train_idx].reset_index(drop=True)
-        # concatenate body and label columns from temp_subset to subset
+        # sample the dataset with stratified (representative) sampling
+        temp_subset = dataset.groupby("label", group_keys=False).sample(frac=args.percent, random_state=kSEED)
+        # add the sampled subset to the subset dataframe
         subset = pd.concat([subset, temp_subset[["body", "label"]]], ignore_index=True)
 
-    # if examples was specified, ensure subset has the correct amount of examples
-    if args.examples and len(subset.index) < args.examples:  # subset has less examples than required
-        num_examples_needed = args.examples - len(subset.index)
-        samples_per_file = int(math.ceil(float(num_examples_needed) / len(files)))  # ensure there will be enough samples to cover num_examples_needed
-
-        # sample datasets for additional examples
-        i = 0
-        for file in files:
-            dataset = pd.read_csv(file, lineterminator='\n')
-            j = 0
-            while j < samples_per_file and i < num_examples_needed:
-                random_row = dataset.sample(n=1, random_state=kSEED)
-                subset = pd.concat([subset, random_row[["body", "label"]]], ignore_index=True)  # add random row to subset
-                j += 1
-                i += 1
-            if i >= num_examples_needed:
-                break
-    elif args.examples and len(subset.index) > args.examples:  # subset has more examples than required
-        num_excess_examples = len(subset.index) - args.examples
-        # Remove num_excess_examples random rows from the subset
-        subset = subset.sample(n=args.examples, random_state=kSEED).reset_index(drop=True)
+    # # create stratified (representative) splitter object
+    # if args.examples:  # transform number of examples into percent
+    #     subset_percent = float(args.examples) / full_dataset_length
+    # else:
+    #     subset_percent = args.percent
+    #     print(f"subset_percent is {subset_percent}") #DEBUG
+    # sss = StratifiedShuffleSplit(
+    #     n_splits=1,                 # number of splits (subsets) needed
+    #     train_size=subset_percent,  # percent of examples in subset. train_size is a percent if it's a float
+    #     test_size=1,
+    #     random_state=kSEED)         # random seed for consistency
     
-    print(subset) #DEBUG
+    # # generate subset
+    # subset = pd.DataFrame()
+    # for file in files:
+    #     dataset = pd.read_csv(file, lineterminator='\n')
+    #     # get training data split
+    #     train_idx, _ = next(sss.split(dataset, dataset["label"]))
+    #     temp_subset = dataset.loc[train_idx].reset_index(drop=True)
+    #     # concatenate body and label columns from temp_subset to subset
+    #     subset = pd.concat([subset, temp_subset[["body", "label"]]], ignore_index=True)
 
-        
+    # # if examples was specified, ensure subset has the correct amount of examples
+    # if args.examples and len(subset.index) < args.examples:  # subset has less examples than required
+    #     num_examples_needed = args.examples - len(subset.index)
+    #     samples_per_file = int(math.ceil(float(num_examples_needed) / len(files)))  # ensure there will be enough samples to cover num_examples_needed
+
+    #     # sample datasets for additional examples
+    #     i = 0
+    #     for file in files:
+    #         dataset = pd.read_csv(file, lineterminator='\n')
+    #         j = 0
+    #         while j < samples_per_file and i < num_examples_needed:
+    #             random_row = dataset.sample(n=1, random_state=kSEED)
+    #             subset = pd.concat([subset, random_row[["body", "label"]]], ignore_index=True)  # add random row to subset
+    #             j += 1
+    #             i += 1
+    #         if i >= num_examples_needed:
+    #             break
+    # elif args.examples and len(subset.index) > args.examples:  # subset has more examples than required
+    #     num_excess_examples = len(subset.index) - args.examples
+    #     # Remove num_excess_examples random rows from the subset
+    #     subset = subset.sample(n=args.examples, random_state=kSEED).reset_index(drop=True)
 
     # df = pd.read_csv(files[0])
     # # get training data split from 
@@ -167,8 +176,5 @@ if __name__ == "__main__":
     # print(subset)
     # print(f"subset has {(percent_positive_examples(subset) * 100):.2f}% positive examples")
 
-    # create outfile
-    outfile = os.open(args.outfile, flags=(os.O_WRONLY | os.O_CREAT))
-
-    # close outfile
-    os.close(outfile)
+    # write subset to csv without row indicies
+    subset.to_csv(args.outfile, index=False)

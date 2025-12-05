@@ -3,15 +3,26 @@
 import argparse
 import os
 import random
+import typing
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedShuffleSplit
 
 DEFAULT_DATASETS_DIR = "source-datasets"
 kSEED = 0
 
 random.seed(kSEED)
 
-def get_files_in_dir(dir: str, recursive: bool = False):
+def get_files_in_dir(dir: str, recursive: bool = False) -> typing.List[str]:
+    """
+    Return a list of all filenames in dir. Filenames returned are relative to the directory in which the script was run.
+    
+    :param dir: The name of the directory
+    :type dir: str
+    :param recursive: Return the files in every directory in dir as well
+    :type recursive: bool
+    :rtype: List[str]
+    """
     files = []
     dir_files = os.listdir(dir)
     # add basename to all filenames in dir_files
@@ -25,6 +36,40 @@ def get_files_in_dir(dir: str, recursive: bool = False):
         elif os.path.isfile(file):  # add file to list if file exists
             files.append(file)
     return files
+
+def num_positive_examples(df: pd.DataFrame) -> int:
+    """
+    Return the number of positive examples in df. df must have a column named "label".
+    
+    :param df: A Pandas DataFrame with a column named "label"
+    :type df: pd.DataFrame
+    :return: The number of positive examples in df
+    :rtype: int
+    """
+    return df[df.label == 1].shape[0]
+
+def num_negative_examples(df: pd.DataFrame) -> int:
+    """
+    Return the number of negative examples in df. df must have a column named "label".
+    
+    :param df: A Pandas DataFrame with a column named "label"
+    :type df: pd.DataFrame
+    :return: The number of negative examples in df
+    :rtype: int
+    """
+    return df[df.label == 0].shape[0]
+
+def percent_positive_examples(df: pd.DataFrame) -> float:
+    """
+    Return a float representing the percent of positive examples in df. df must have a column named "label".
+    
+    :param df: A Pandas Dataframe with a column named "label"
+    :type df: pd.DataFrame
+    :return: The percent of positive examples in df.
+    :rtype: float
+    """
+    total_examples = len(df.index)
+    return float(num_positive_examples(df)) / total_examples
                 
 if __name__ == "__main__":
     # parse arguments
@@ -53,14 +98,19 @@ if __name__ == "__main__":
         elif os.path.isfile(file):  # add file to list if file exists
             files.append(file)
 
-    print(files) #DEBUG
+    # # len(df.index)
+    # for file in files:
+    #     dataset = pd.read_csv(file, lineterminator='\n')
+    #     print(f"dataset {os.path.basename(file)} has {num_positive_examples(dataset)} positive and {num_negative_examples(dataset)} negative examples")
+    #     print(f"dataset {os.path.basename(file)} has {(percent_positive_examples(dataset) * 100):.2f}% positive examples")
 
-    # len(df.index)
-    for file in files:
-        dataset = pd.read_csv(file, lineterminator='\n')
-        positive_labels = dataset[dataset.label == 1].shape[0]
-        negative_labels = dataset[dataset.label == 0].shape[0]
-        print(f"dataset {os.path.basename(file)} has {positive_labels} positive and {negative_labels} negative examples")
+    # create stratified (representative) splitter object
+    sss = StratifiedShuffleSplit(n_splits=1, train_size=200, random_state=0)
+    df = pd.read_csv(files[0])
+    train_idx, _ = next(sss.split(df, df['label']))
+    subset = df.loc[train_idx].reset_index(drop=True)
+    print(subset)
+    print(f"subset has {(percent_positive_examples(subset) * 100):.2f}% positive examples")
 
     # create outfile
     outfile = os.open(args.outfile, flags=(os.O_WRONLY | os.O_CREAT))

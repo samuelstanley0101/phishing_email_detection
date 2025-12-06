@@ -10,6 +10,7 @@ import pandas as pd
 #from sklearn.model_selection import StratifiedShuffleSplit
 
 DEFAULT_DATASETS_DIR = "source-datasets"
+VERIFICATION_CLOSENESS = 0.02
 kSEED = 0
 random.seed(kSEED)
 verbose: bool = False
@@ -93,6 +94,7 @@ if __name__ == "__main__":
     subset_size_parser.add_argument("--percent", "-P", type=float, help="Percent of source dataset(s) to include in subset")
     argparser.add_argument("--outfile", "-O", type=str, required=True, help="File to write resulting subset to")
     argparser.add_argument("-r", action="store_true", dest="recursive", help="Add all files in directories specified recursively")
+    argparser.add_argument("--verify", action="store_true", help="Verify that the file written to has the correct number of examples")
     verboseness_parser = argparser.add_mutually_exclusive_group(required=False)
     verboseness_parser.add_argument("--verbose", action="store_true", help="Print additional messages while running")
     verboseness_parser.add_argument("--silent", action="store_true", help="Print no messages while running")
@@ -143,6 +145,7 @@ if __name__ == "__main__":
         full_dataset_length += len(dataset.index)
         full_dataset_positive_examples += num_positive_examples(dataset)
         print_verbose(f"Found {full_dataset_length} examples in file {file}, {full_dataset_positive_examples} of which were positive.")  # VERBOSE
+    full_dataset_positive_proportion = float(full_dataset_positive_examples) / full_dataset_length
 
     # print length
     if not silent: print(f"Finished reading files for dataset length, found {full_dataset_length} examples.", flush=True)
@@ -166,8 +169,8 @@ if __name__ == "__main__":
         dataset = pd.read_csv(file, lineterminator='\n')
         # sample the dataset with stratified (representative) sampling
         temp_subset = dataset.groupby("label", group_keys=False).sample(frac=proportion, random_state=kSEED)
-        print_verbose(f"Generated subset from file {file} with {len(temp_subset)} examples, \
-                      {num_positive_examples(temp_subset)} positive and {num_negative_examples(temp_subset)} negative.")  # VERBOSE
+        print_verbose(f"""Generated subset from file {file} with {len(temp_subset)} examples, \
+{num_positive_examples(temp_subset)} positive and {num_negative_examples(temp_subset)} negative.""")  # VERBOSE
         # add the sampled subset to the subset dataframe
         subset = pd.concat([subset, temp_subset[["body", "label"]]], ignore_index=True)
 
@@ -206,8 +209,28 @@ if __name__ == "__main__":
         print(f"""Finished generating subset with {len(subset)} examples \
 and a positive proportion of {percent_positive_examples(subset):.3f} \
 from a dataset with {full_dataset_length} examples \
-and a positive proportion of {float(full_dataset_positive_examples) / full_dataset_length:.3f}.""", flush=True)
+and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=True)
 
     # write subset to csv without row indicies
     print_verbose(f"Writing subset to file {args.outfile}.")  # VERBOSE
     subset.to_csv(args.outfile, index=False)
+
+    # verify that the csv has the correct number of examples
+    if args.verify:
+        print_verbose(f"Verifying that {args.outfile} has the correct number of examples.")  # VERBOSE
+        dataset = pd.read_csv(args.outfile)
+
+        # verify number of examples
+        if args.examples and len(dataset) != args.examples:
+            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have {args.examples} examples.")
+        elif args.percent and not math.isclose(len(dataset), full_dataset_length * args.percent, rel_tol=VERIFICATION_CLOSENESS):
+            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have about {full_dataset_length * args.percent:.3f} examples.")
+        else:
+            if not silent: print(f"Verified that {args.outfile} has the correct number of examples.")
+
+        # verify proportion of examples
+        subset_positive_proportion = percent_positive_examples(dataset)
+        if not math.isclose(subset_positive_proportion, full_dataset_positive_proportion, rel_tol=VERIFICATION_CLOSENESS):
+            raise ValueError(f"{args.outfile} has a positive proportion of {subset_positive_proportion} but should have a positive proportion of about {full_dataset_positive_proportion}.")
+        else:
+            if not silent: print(f"Verified that {args.outfile} has the correct proportion of positive examples to negative examples.")

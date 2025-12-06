@@ -207,7 +207,7 @@ and a positive proportion of {proportion_positive_examples(subset):.3f} \
 from a dataset with {full_dataset_length} examples \
 and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=True)
 
-    # write subset to csv without row indicies
+    # write subset to csv without row indices
     print_verbose(f"Writing subset to file {args.outfile}.")  # VERBOSE
     subset.to_csv(args.outfile, index=False)
 

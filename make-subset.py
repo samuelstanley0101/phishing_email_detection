@@ -74,13 +74,13 @@ def num_negative_examples(df: pd.DataFrame) -> int:
     """
     return df[df.label == 0].shape[0]
 
-def percent_positive_examples(df: pd.DataFrame) -> float:
+def proportion_positive_examples(df: pd.DataFrame) -> float:
     """
-    Return a float representing the percent of positive examples in df. df must have a column named "label".
+    Return a float representing the proportion of positive examples in df. df must have a column named "label".
     
     :param df: A Pandas Dataframe with a column named "label"
     :type df: pd.DataFrame
-    :return: The percent of positive examples in df.
+    :return: The proportion of positive examples in df.
     :rtype: float
     """
     total_examples = len(df.index)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     subset_size_parser = argparser.add_mutually_exclusive_group(required=True)
     subset_size_parser.add_argument("--examples", "-E", type=int, help="Number of examples in the subset")
-    subset_size_parser.add_argument("--percent", "-P", type=float, help="Percent of source dataset(s) to include in subset")
+    subset_size_parser.add_argument("--proportion", "-P", type=float, help="Proportion of source dataset(s) to include in subset")
     argparser.add_argument("--outfile", "-O", type=str, required=True, help="File to write resulting subset to")
     argparser.add_argument("-r", action="store_true", dest="recursive", help="Add all files in directories specified recursively")
     argparser.add_argument("--verify", action="store_true", help="Verify that the file written to has the correct number of examples")
@@ -105,10 +105,6 @@ if __name__ == "__main__":
         verbose = True
     elif args.silent:
         silent = True
-
-    # # temporarily raise exception for --examples argument
-    # if args.examples:
-    #     raise NotImplementedError("Error: --examples argument is not yet implemented")
 
     # add datasets to args.files if no files supplied
     if len(args.files) == 0:
@@ -154,8 +150,8 @@ if __name__ == "__main__":
     if args.examples:  # calculate proportion if the examples argument was given
         proportion = float(args.examples) / full_dataset_length
         print_verbose(f"Calculated proportion from desired number of examples as {proportion:.3f}.")  # VERBOSE
-    else:  # args.percent specified, set proportion directly
-        proportion = args.percent
+    else:  # args.proportion specified, set proportion directly
+        proportion = args.proportion
 
     # generate subset
     if not silent and not verbose:
@@ -207,7 +203,7 @@ if __name__ == "__main__":
     # print information about subset
     if not silent:
         print(f"""Finished generating subset with {len(subset)} examples \
-and a positive proportion of {percent_positive_examples(subset):.3f} \
+and a positive proportion of {proportion_positive_examples(subset):.3f} \
 from a dataset with {full_dataset_length} examples \
 and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=True)
 
@@ -223,13 +219,13 @@ and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=T
         # verify number of examples
         if args.examples and len(dataset) != args.examples:
             raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have {args.examples} examples.")
-        elif args.percent and not math.isclose(len(dataset), full_dataset_length * args.percent, rel_tol=VERIFICATION_CLOSENESS):
-            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have about {full_dataset_length * args.percent:.3f} examples.")
+        elif args.proportion and not math.isclose(len(dataset), full_dataset_length * args.proportion, rel_tol=VERIFICATION_CLOSENESS):
+            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have about {full_dataset_length * args.proportion:.3f} examples.")
         else:
             if not silent: print(f"Verified that {args.outfile} has the correct number of examples.")
 
         # verify proportion of examples
-        subset_positive_proportion = percent_positive_examples(dataset)
+        subset_positive_proportion = proportion_positive_examples(dataset)
         if not math.isclose(subset_positive_proportion, full_dataset_positive_proportion, rel_tol=VERIFICATION_CLOSENESS):
             raise ValueError(f"{args.outfile} has a positive proportion of {subset_positive_proportion} but should have a positive proportion of about {full_dataset_positive_proportion}.")
         else:

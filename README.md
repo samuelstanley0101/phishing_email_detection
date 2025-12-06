@@ -24,6 +24,8 @@ Note that you must have [git-lfs](https://git-lfs.com/) installed to download th
 
 **-r:** Recursively add all files in subdirectories specified.
 
+**--verify:** Verify that the number of examples and proportion of positive to negative examples in the subset is what's expected.
+
 **--verbose:** Print additional messages while running.
 
 **--silent:** Print no messages while running.

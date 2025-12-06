@@ -16,10 +16,16 @@ Note that you must have [git-lfs](https://git-lfs.com/) installed to download th
 
 **--percent, -P:** The percent of the original datasets to put in the subset.
 
+**--examples, -E:** The number of examples which should be in the subset.
+
+*Note that specifying number of examples may result in a subset slightly less proportional to the original dataset than specifying the percent would be.*
+
 **--outfile, -O:** The file to write the subset to. Should be a CSV.
 
 **-r:** Recursively add all files in subdirectories specified.
 
-**files:** The files or directories containing datasets to make a subset out of. All files from any directories specified will be used, but any subdirectories within the directories specified will be ignored unless `-r` is used. **If no files are specified, all files (excluding subdirectories) from the `source-datasets` directory will be used.**
+**--verbose:** Print additional messages while running.
 
-*Note: a --example argument will be added soon.*
+**--silent:** Print no messages while running.
+
+**files:** The files or directories containing datasets to make a subset out of. All files from any directories specified will be used, but any subdirectories within the directories specified will be ignored unless `-r` is used. **If no files are specified, all files (excluding subdirectories) from the `source-datasets` directory will be used.**

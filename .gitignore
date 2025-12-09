@@ -2,3 +2,5 @@
 logistic_results
 subsets
 RESULTS.zip
+venv
+.python-version

@@ -30,6 +30,8 @@ Note that you must have [git-lfs](https://git-lfs.com/) installed to download th
 
 **--silent:** Print no messages while running.
 
+**--precision:** The precision to print floating point numbers to the terminal with. Defaults to 4.
+
 **files:** The files or directories containing datasets to make a subset out of. All files from any directories specified will be used, but any subdirectories within the directories specified will be ignored unless `-r` is used. **If no files are specified, all files (excluding subdirectories) from the `source-datasets` directory will be used.**
 
 *Credit to [Geeks for Geeks](https://www.geeksforgeeks.org/python/stratified-sampling-in-pandas/) for help with stratified sampling.*

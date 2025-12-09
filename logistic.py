@@ -77,7 +77,7 @@ def evaluate_model(
     vectorizer_factory: Callable[[], object],
     X: pd.Series,
     y: pd.Series,
-) -> Tuple[Dict[str, float], str]:
+) -> Tuple[Dict[str, float | str], str]:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
     )
@@ -90,7 +90,7 @@ def evaluate_model(
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
 
-    acc = accuracy_score(y_test, y_pred)
+    acc = float(accuracy_score(y_test, y_pred))
     bacc = balanced_accuracy_score(y_test, y_pred)
     report = classification_report(
         y_test,
@@ -101,7 +101,7 @@ def evaluate_model(
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
     cv_scores = cross_val_score(
         pipeline,
-        X,
+        X, # type: ignore
         y,
         cv=cv,
         scoring="balanced_accuracy",
@@ -114,7 +114,7 @@ def evaluate_model(
     output_text += f"Balanced accuracy: {bacc:.3f}\n"
     output_text += f"CV balanced accuracy (5-fold): {np.round(cv_scores, 3)}\n"
     output_text += f"Mean CV balanced accuracy: {cv_scores.mean():.3f}\n"
-    output_text += report
+    output_text += report # type: ignore
 
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
@@ -143,7 +143,7 @@ def evaluate_model(
 
 
 def main():
-    results: List[Dict[str, float]] = []
+    results: List[Dict[str, float | str]] = []
     all_output = ""
     
     for dataset_name, filename in DATASET_FILES.items():

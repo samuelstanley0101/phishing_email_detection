@@ -14,20 +14,17 @@ from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_DIR = BASE_DIR / "source-datasets"
+DATASET_DIR = BASE_DIR
 OUTPUT_DIR = BASE_DIR / "logistic_results"
 RANDOM_STATE = 42
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 DATASET_FILES: Dict[str, str] = {
-    "Assassin": "Assassin.csv",
-    "Enron": "Enron.csv",
-    "Ling": "Ling.csv",
-    "CEAS-08": "CEAS-08.csv",
-    "TREC-05": "TREC-05.csv",
-    "TREC-06": "TREC-06.csv",
-    "TREC-07": "TREC-07.csv",
+    "subset_001": "subset_001.csv",
+    "subset_01": "subset_01.csv",
+    "subset_1": "subset_1.csv",
+    "subset_full": "subset_full.csv",
 }
 
 
@@ -44,6 +41,7 @@ def load_dataset(name: str, filename: str) -> Tuple[pd.Series, pd.Series]:
     return df["body"], df["label"]
 
 
+# TF-IDF Vectorizer (unigrams only)
 def build_tfidf_vectorizer() -> TfidfVectorizer:
     return TfidfVectorizer(
         max_features=20000,
@@ -53,6 +51,7 @@ def build_tfidf_vectorizer() -> TfidfVectorizer:
     )
 
 
+# N-gram Vectorizer (1-2 grams using CountVectorizer)
 def build_ngram_vectorizer() -> CountVectorizer:
     return CountVectorizer(
         max_features=25000,
@@ -149,6 +148,7 @@ def main():
     for dataset_name, filename in DATASET_FILES.items():
         X, y = load_dataset(dataset_name, filename)
 
+        # Model 1: Logistic Regression with TF-IDF
         result1, output1 = evaluate_model(
             dataset_name,
             "LogReg + TF-IDF (uni)",
@@ -159,6 +159,7 @@ def main():
         results.append(result1)
         all_output += output1
 
+        # Model 2: Logistic Regression with N-grams
         result2, output2 = evaluate_model(
             dataset_name,
             "LogReg + Count (1-2gram)",

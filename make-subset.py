@@ -11,6 +11,7 @@ import pandas as pd
 
 DEFAULT_DATASETS_DIR = "source-datasets"
 VERIFICATION_CLOSENESS = 0.02
+PRECISION = 4
 kSEED = 0
 random.seed(kSEED)
 verbose: bool = False
@@ -95,6 +96,7 @@ if __name__ == "__main__":
     argparser.add_argument("--outfile", "-O", type=str, required=True, help="File to write resulting subset to")
     argparser.add_argument("-r", action="store_true", dest="recursive", help="Add all files in directories specified recursively")
     argparser.add_argument("--verify", action="store_true", help="Verify that the file written to has the correct number of examples")
+    argparser.add_argument("--precision", type=int, required=False, help="The precision to print floating point numbers to the terminal with.")
     verboseness_parser = argparser.add_mutually_exclusive_group(required=False)
     verboseness_parser.add_argument("--verbose", action="store_true", help="Print additional messages while running")
     verboseness_parser.add_argument("--silent", action="store_true", help="Print no messages while running")
@@ -105,6 +107,9 @@ if __name__ == "__main__":
         verbose = True
     elif args.silent:
         silent = True
+    
+    if args.precision:
+        PRECISION = args.precision
 
     # add datasets to args.files if no files supplied
     if len(args.files) == 0:
@@ -149,7 +154,7 @@ if __name__ == "__main__":
     # set proportion
     if args.examples:  # calculate proportion if the examples argument was given
         proportion = float(args.examples) / full_dataset_length
-        print_verbose(f"Calculated proportion from desired number of examples as {proportion:.3f}.")  # VERBOSE
+        print_verbose(f"Calculated proportion from desired number of examples as {proportion:.{PRECISION}f}.")  # VERBOSE
     else:  # args.proportion specified, set proportion directly
         proportion = args.proportion
 
@@ -203,9 +208,9 @@ if __name__ == "__main__":
     # print information about subset
     if not silent:
         print(f"""Finished generating subset with {len(subset)} examples \
-and a positive proportion of {proportion_positive_examples(subset):.3f} \
+and a positive proportion of {proportion_positive_examples(subset):.{PRECISION}f} \
 from a dataset with {full_dataset_length} examples \
-and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=True)
+and a positive proportion of {full_dataset_positive_proportion:.{PRECISION}f}.""", flush=True)
 
     # write subset to csv without row indices
     print_verbose(f"Writing subset to file {args.outfile}.")  # VERBOSE
@@ -220,7 +225,7 @@ and a positive proportion of {full_dataset_positive_proportion:.3f}.""", flush=T
         if args.examples and len(dataset) != args.examples:
             raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have {args.examples} examples.")
         elif args.proportion and not math.isclose(len(dataset), full_dataset_length * args.proportion, rel_tol=VERIFICATION_CLOSENESS):
-            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have about {full_dataset_length * args.proportion:.3f} examples.")
+            raise ValueError(f"{args.outfile} has {len(dataset)} examples but should have about {full_dataset_length * args.proportion:.{PRECISION}f} examples.")
         else:
             if not silent: print(f"Verified that {args.outfile} has the correct number of examples.")
 

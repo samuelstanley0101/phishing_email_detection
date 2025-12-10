@@ -6,6 +6,10 @@ Download this repository with `git clone https://github.com/samuelstanley0101/ph
 
 Note that you must have [git-lfs](https://git-lfs.com/) installed to download the dataset.
 
+## logistic.py
+
+Python 3.10.3 recommended.
+
 ## make-subset.py
 
 `make-subset.py` creates a single subset of any number of CSV datasets containing `body` and `label` columns and writes it to a file. It only loads one dataset at a time, so it should not require much memory. Here is its usage:

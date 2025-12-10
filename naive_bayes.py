@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+import sys
 
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -136,8 +137,13 @@ def run_balanced_nb(name: str, filepath: Path):
 # Run on all datasets
 # -------------------------------------------------------------------
 if __name__ == "__main__":
-    for name, path in dataset_files.items():
-        run_balanced_nb(name, path)
+    if len(sys.argv) > 1:
+        for filename in sys.argv[1:]:
+            filepath = BASE / filename
+            run_balanced_nb(filename, filepath)
+    else:
+        for name, path in dataset_files.items():
+            run_balanced_nb(name, path)
 
     print("\n\n===== Overall Comparison =====")
     comp_df = pd.DataFrame(results_summary)

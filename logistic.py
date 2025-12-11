@@ -17,26 +17,17 @@ from sklearn.pipeline import Pipeline
 import matplotlib.pyplot as plt
 
 BASE_DIR = Path(__file__).resolve().parent
-DATASET_DIR = BASE_DIR
 OUTPUT_DIR = BASE_DIR / "logistic_results"
 RANDOM_STATE = 42
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-DATASET_FILES: Dict[str, str] = {
-    "subset_001": "subset_001.csv",
-    "subset_01": "subset_01.csv",
-    "subset_1": "subset_1.csv",
-    "subset_full": "subset_full.csv",
-}
 
-
-def load_dataset(filename: str) -> Tuple[pd.Series, pd.Series]:
-    path = DATASET_DIR / filename
+def load_dataset(filepath: Path) -> Tuple[pd.Series, pd.Series]:
     try:
-        df = pd.read_csv(path)
+        df = pd.read_csv(filepath)
     except ParserError:
-        df = pd.read_csv(path, engine="python", on_bad_lines="skip")
+        df = pd.read_csv(filepath, engine="python", on_bad_lines="skip")
     df = df.dropna(subset=["body", "label"]).copy()
     df["label"] = pd.to_numeric(df["label"], errors="coerce")
     df = df.dropna(subset=["label"])
@@ -67,14 +58,14 @@ def build_ngram_vectorizer() -> CountVectorizer:
 def make_classifier() -> LogisticRegression:
     return LogisticRegression(
         max_iter=1000,
-        n_jobs=-1,
+        n_jobs=1,  # single core to avoid joblib temp spills
         class_weight="balanced",
         solver="lbfgs",
     )
 
 
 def evaluate_model(
-    dataset_name: str,
+    dataset_label: str,
     model_name: str,
     vectorizer_factory: Callable[[], object],
     X: pd.Series,
@@ -101,16 +92,17 @@ def evaluate_model(
     )
 
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+    os.environ["JOBLIB_TEMP_FOLDER"] = str(OUTPUT_DIR)
     cv_scores = cross_val_score(
         pipeline,
         X, # type: ignore
         y,
         cv=cv,
         scoring="balanced_accuracy",
-        n_jobs=-1,
+        n_jobs=1,
     )
 
-    output_text = f"\n=== {dataset_name} | {model_name} ===\n"
+    output_text = f"\n=== {dataset_label} | {model_name} ===\n"
     output_text += f"Train size: {len(X_train)} | Test size: {len(X_test)}\n"
     output_text += f"Accuracy: {acc:.3f}\n"
     output_text += f"Balanced accuracy: {bacc:.3f}\n"
@@ -122,7 +114,7 @@ def evaluate_model(
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(4, 3.5))
     plt.imshow(cm, cmap="coolwarm", aspect="auto")
-    plt.title(f"Confusion Matrix – {dataset_name} | {model_name}")
+    plt.title(f"Confusion Matrix – {dataset_label} | {model_name}")
     plt.xticks([0, 1], ["Pred Safe", "Pred Phish"])
     plt.yticks([0, 1], ["True Safe", "True Phish"])
     for (i, j), v in np.ndenumerate(cm):
@@ -131,12 +123,12 @@ def evaluate_model(
     plt.tight_layout()
     
     safe_model_name = model_name.replace(" ", "_").replace("+", "").replace("(", "").replace(")", "")
-    cm_filename = OUTPUT_DIR / f"cm_{dataset_name}_{safe_model_name}.png"
+    cm_filename = OUTPUT_DIR / f"cm_{dataset_label}_{safe_model_name}.png"
     plt.savefig(cm_filename, dpi=100, bbox_inches="tight")
     plt.close()
 
     return {
-        "Dataset": dataset_name,
+        "Dataset": dataset_label,
         "Model": model_name,
         "Accuracy": acc,
         "Balanced Accuracy": bacc,

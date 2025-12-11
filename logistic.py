@@ -147,8 +147,15 @@ def evaluate_model(
 def main():
     # parse arguments
     argparser = argparse.ArgumentParser()
+    argparser.add_argument("--tfidf", action="store_true", help="Vectorize the dataset using TF-IDF")
+    argparser.add_argument("--ngram", action="store_true", help="Vectorize the dataset using N-Gram")
     argparser.add_argument("dataset", type=str, help="File to run logistic regression on.")
     args = argparser.parse_args()
+
+    # process default args
+    if not args.tfidf and not args.ngram:
+        args.tfidf = True
+        args.ngram = True
 
     # get dataset file
     if not args.dataset:
@@ -164,51 +171,28 @@ def main():
     X, Y = load_dataset(dataset_file)
 
     # Model 1: Logistic Regression with TF-IDF
-    result1, output1 = evaluate_model(
-        os.path.basename(dataset_file),
-        "LogReg + TF-IDF (uni)",
-        build_tfidf_vectorizer,
-        X,
-        Y,
-    )
-    results.append(result1)
-    all_output += output1
+    if args.tfidf:
+        result1, output1 = evaluate_model(
+            os.path.basename(dataset_file),
+            "LogReg + TF-IDF (uni)",
+            build_tfidf_vectorizer,
+            X,
+            Y,
+        )
+        results.append(result1)
+        all_output += output1
 
     # Model 2: Logistic Regression with N-grams
-    result2, output2 = evaluate_model(
-        os.path.basename(dataset_file),
-        "LogReg + Count (1-2gram)",
-        build_ngram_vectorizer,
-        X,
-        Y,
-    )
-    results.append(result2)
-    all_output += output2
-    
-    # for dataset_name, filename in DATASET_FILES.items():
-    #     X, y = load_dataset(dataset_name, filename)
-
-    #     # Model 1: Logistic Regression with TF-IDF
-    #     result1, output1 = evaluate_model(
-    #         dataset_name,
-    #         "LogReg + TF-IDF (uni)",
-    #         build_tfidf_vectorizer,
-    #         X,
-    #         y,
-    #     )
-    #     results.append(result1)
-    #     all_output += output1
-
-    #     # Model 2: Logistic Regression with N-grams
-    #     result2, output2 = evaluate_model(
-    #         dataset_name,
-    #         "LogReg + Count (1-2gram)",
-    #         build_ngram_vectorizer,
-    #         X,
-    #         y,
-    #     )
-    #     results.append(result2)
-    #     all_output += output2
+    if args.ngram:
+        result2, output2 = evaluate_model(
+            os.path.basename(dataset_file),
+            "LogReg + Count (1-2gram)",
+            build_ngram_vectorizer,
+            X,
+            Y,
+        )
+        results.append(result2)
+        all_output += output2
 
     summary_df = pd.DataFrame(results)
     summary_text = "\n===== Summary =====\n" + summary_df.to_string()

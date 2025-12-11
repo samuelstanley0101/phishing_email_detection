@@ -8,7 +8,21 @@ Note that you must have [git-lfs](https://git-lfs.com/) installed to download th
 
 ## logistic.py
 
-Python 3.10.3 recommended.
+`logistic.py` creates a model using logistic regression from a single CSV dataset containing `body` and `label` columns and outputs the results of testing the model to the terminal. It can use TF-IDF or N-Gram vectorization. Here is its usage:
+
+```bash
+python3 logistic.py [OPTIONS] file
+```
+
+**--tfidf:** Use TF-IDF vectorization.
+
+**--ngram:** Use N-Gram vectorization.
+
+*Note that by default two models will be trained using TF-IDF and N-Gram vectorization, respectively.*
+
+**file:** The file to run logistic regression on. Must be a CSV with `body` and `label` columns.
+
+Python 3.10.3 is recommended. Requirements are listed in `requirements.txt`.
 
 ## make-subset.py
 

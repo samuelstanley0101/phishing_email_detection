@@ -141,7 +141,7 @@ def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--tfidf", action="store_true", help="Vectorize the dataset using TF-IDF")
     argparser.add_argument("--ngram", action="store_true", help="Vectorize the dataset using N-Gram")
-    argparser.add_argument("dataset", type=str, help="File to run logistic regression on.")
+    argparser.add_argument("dataset", type=str, help="File to run logistic regression on. Must be a CSV with 'body' and 'label' columns")
     args = argparser.parse_args()
 
     # process default args
@@ -160,7 +160,9 @@ def main():
     results: List[Dict[str, float | str]] = []
     all_output = ""
 
+    print(f"Loading dataset from {args.dataset_file}...")
     X, Y = load_dataset(dataset_file)
+    print(f"Loaded {len(X)} samples\n")
 
     # Model 1: Logistic Regression with TF-IDF
     if args.tfidf:

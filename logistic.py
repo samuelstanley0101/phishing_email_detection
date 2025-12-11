@@ -35,7 +35,7 @@ def load_dataset(filepath: Path) -> Tuple[pd.Series, pd.Series]:
     return df["body"], df["label"]
 
 
-# TF-IDF Vectorizer (unigrams only)
+# TF-IDF Vectorizer
 def build_tfidf_vectorizer() -> TfidfVectorizer:
     return TfidfVectorizer(
         max_features=20000,
@@ -45,7 +45,7 @@ def build_tfidf_vectorizer() -> TfidfVectorizer:
     )
 
 
-# N-gram Vectorizer (1-2 grams using CountVectorizer)
+# N-gram Vectorizer
 def build_ngram_vectorizer() -> CountVectorizer:
     return CountVectorizer(
         max_features=25000,
@@ -110,7 +110,19 @@ def evaluate_model(
     output_text += f"Mean CV balanced accuracy: {cv_scores.mean():.3f}\n"
     output_text += report # type: ignore
 
-    # Confusion matrix
+    try:
+        vec = pipeline.named_steps["vectorizer"]
+        clf = pipeline.named_steps["clf"]
+        feature_names = np.array(getattr(vec, "get_feature_names_out")())
+        coefs = clf.coef_[0]
+        top_n = 10
+        top_phish_idx = np.argsort(coefs)[-top_n:][::-1]
+        top_safe_idx = np.argsort(coefs)[:top_n]
+        output_text += "\nTop indicative phishing features: " + ", ".join(feature_names[top_phish_idx]) + "\n"
+        output_text += "Top indicative safe features: " + ", ".join(feature_names[top_safe_idx]) + "\n"
+    except Exception as e:
+        output_text += f"\n(Feature introspection unavailable: {e})\n"
+
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(4, 3.5))
     plt.imshow(cm, cmap="coolwarm", aspect="auto")
@@ -192,7 +204,6 @@ def main():
     summary_text = "\n===== Summary =====\n" + summary_df.to_string()
     all_output += summary_text
     
-    # Save to file
     results_file = OUTPUT_DIR / "results.txt"
     with open(results_file, "w") as f:
         f.write(all_output)

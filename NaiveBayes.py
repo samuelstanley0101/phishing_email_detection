@@ -15,20 +15,14 @@ from sklearn.metrics import (
 from pandas.errors import ParserError
 import matplotlib.pyplot as plt
 
-# -------------------------------------------------------------------
-# 0) Define your datasets (relative to this notebook)
-# -------------------------------------------------------------------
-BASE = Path.cwd()              # current working directory
-DATASET_DIR = BASE / "Dataset" # folder that holds your CSVs
+BASE = Path.cwd()
+DATASET_DIR = BASE / "Dataset"
 
 dataset_files = {
-    "Assassin": DATASET_DIR / "Assassin.csv",
-    "Enron": DATASET_DIR / "Enron.csv",
-    "Ling": DATASET_DIR / "Ling.csv",
-    "CEAS-08": DATASET_DIR / "CEAS-08.csv",
-    "TREC-05": DATASET_DIR / "TREC-05.csv",
-    "TREC-06": DATASET_DIR / "TREC-06.csv",
-    "TREC-07": DATASET_DIR / "TREC-07.csv",
+    "subset_001": BASE / "subset_001.csv",
+    "subset_01": BASE / "subset_01.csv",
+    "subset_1": BASE / "subset_1.csv",
+    "subset_full": BASE / "subset_full.csv",
 }
 
 results_summary = []
@@ -37,7 +31,6 @@ results_summary = []
 def run_balanced_nb(name: str, filepath: Path):
     print(f"\n========== {name} ==========")
 
-    # --- Load dataset with robust CSV handling ---
     try:
         df = pd.read_csv(filepath)
     except ParserError:
@@ -45,10 +38,9 @@ def run_balanced_nb(name: str, filepath: Path):
         df = pd.read_csv(
             filepath,
             engine="python",
-            on_bad_lines="skip"  # skip malformed/broken lines
+            on_bad_lines="skip"
         )
 
-    # Your files use: 'body' for text, 'label' for class (0/1)
     df = df.dropna(subset=["body"]).copy()
     df["Label"] = df["label"].astype(int)
 
@@ -58,23 +50,14 @@ def run_balanced_nb(name: str, filepath: Path):
     X = df["body"].values
     y = df["Label"].values
 
-    # ------------------------------------------------------
-    # 1) Train/test split (stratified to keep class ratio)
-    # ------------------------------------------------------
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # ------------------------------------------------------
-    # 2) TF-IDF vectorization
-    # ------------------------------------------------------
     tfidf = TfidfVectorizer(max_features=5000, stop_words="english")
     X_train_t = tfidf.fit_transform(X_train)
     X_test_t = tfidf.transform(X_test)
 
-    # ------------------------------------------------------
-    # 3) Standard Multinomial Naive Bayes
-    # ------------------------------------------------------
     nb = MultinomialNB()
     nb.fit(X_train_t, y_train)
     y_pred = nb.predict(X_test_t)
@@ -93,9 +76,18 @@ def run_balanced_nb(name: str, filepath: Path):
         )
     )
 
-    # ------------------------------------------------------
-    # 4) Confusion matrix (per dataset)
-    # ------------------------------------------------------
+    try:
+        feature_names = np.array(tfidf.get_feature_names_out())
+        log_prob_diff = nb.feature_log_prob_[1] - nb.feature_log_prob_[0]
+        top_n = 10
+        top_phish_idx = np.argsort(log_prob_diff)[-top_n:][::-1]
+        top_safe_idx = np.argsort(log_prob_diff)[:top_n]
+        print("Top indicative phishing tokens:", ", ".join(feature_names[top_phish_idx]))
+        print("Top indicative safe tokens:", ", ".join(feature_names[top_safe_idx]))
+    except Exception as e:
+        print(f"(Feature introspection unavailable: {e})")
+
+
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(3.4, 3))
     plt.imshow(cm, cmap="coolwarm")
@@ -107,9 +99,7 @@ def run_balanced_nb(name: str, filepath: Path):
     plt.tight_layout()
     plt.show()
 
-    # ------------------------------------------------------
-    # 5) 5-fold cross-validation with balanced accuracy
-    # ------------------------------------------------------
+
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     X_all = tfidf.fit_transform(X)  # TF-IDF on all samples for CV
     nb_cv = MultinomialNB()
@@ -119,9 +109,7 @@ def run_balanced_nb(name: str, filepath: Path):
     print("Fold scores:", np.round(bacc_cv, 3))
     print("Mean Balanced Accuracy:", np.round(bacc_cv.mean(), 3))
 
-    # ------------------------------------------------------
-    # 6) Store summary for comparison across sets
-    # ------------------------------------------------------
+
     results_summary.append(
         {
             "Dataset": name,
@@ -132,9 +120,6 @@ def run_balanced_nb(name: str, filepath: Path):
     )
 
 
-# -------------------------------------------------------------------
-# Run on all datasets
-# -------------------------------------------------------------------
 for name, path in dataset_files.items():
     run_balanced_nb(name, path)
 

@@ -1,10 +1,18 @@
 # Comparing Model Performance on Phishing Email Detection
 
-Datasets obtained from [figshare](https://figshare.com/articles/dataset/Seven_Phishing_Email_Datasets/25432108).
-
 Download this repository with `git clone https://github.com/samuelstanley0101/phishing_email_detection`
 
 Note that you must have [git-lfs](https://git-lfs.com/) installed to download the dataset.
+
+Datasets obtained from [figshare](https://figshare.com/articles/dataset/Seven_Phishing_Email_Datasets/25432108).
+
+## Usage
+
+Datasets are stored in `source-datasets`. If you downloaded this repository from GitHub and have `git-lfs` installed the datasets have been downloaded automatically. If not you must download the datasets into `source-datasets` from [figshare](https://figshare.com/articles/dataset/Seven_Phishing_Email_Datasets/25432108). Note that the Vectorized datasets are not extracted to the base `source-datasets` directory.
+
+`naive_bayes.py` generates the Naive Bayes model and `logistic.py` generates the Logistic Regression models. Use instructions for both this programs are below.
+
+`make-subset.py` generates the subsets used for training. Its use instructions are below. You can run `./generate-subsets.sh` to automatically generate all the subsets used for testing.
 
 ## logistic.py
 

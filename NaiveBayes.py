@@ -1,29 +1,22 @@
-import pandas as pd
-import numpy as np
+#!/usr/bin/env python3
+import argparse
+import os
 from pathlib import Path
 
-from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from pandas.errors import ParserError
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
     accuracy_score,
     balanced_accuracy_score,
+    classification_report,
+    confusion_matrix,
 )
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
+from sklearn.naive_bayes import MultinomialNB
 
-from pandas.errors import ParserError
-import matplotlib.pyplot as plt
-
-BASE = Path.cwd()
-DATASET_DIR = BASE / "Dataset"
-
-dataset_files = {
-    "subset_001": BASE / "subset_001.csv",
-    "subset_01": BASE / "subset_01.csv",
-    "subset_1": BASE / "subset_1.csv",
-    "subset_full": BASE / "subset_full.csv",
-}
 
 results_summary = []
 
@@ -31,6 +24,7 @@ results_summary = []
 def run_balanced_nb(name: str, filepath: Path):
     print(f"\n========== {name} ==========")
 
+    # --- Load dataset, robust to parsing issues ---
     try:
         df = pd.read_csv(filepath)
     except ParserError:
@@ -38,10 +32,13 @@ def run_balanced_nb(name: str, filepath: Path):
         df = pd.read_csv(
             filepath,
             engine="python",
-            on_bad_lines="skip"
+            on_bad_lines="skip",
         )
 
-    df = df.dropna(subset=["body"]).copy()
+    # Require body + label, coerce label to int
+    df = df.dropna(subset=["body", "label"]).copy()
+    df["label"] = pd.to_numeric(df["label"], errors="coerce")
+    df = df.dropna(subset=["label"])
     df["Label"] = df["label"].astype(int)
 
     print("Shape:", df.shape)
@@ -50,10 +47,12 @@ def run_balanced_nb(name: str, filepath: Path):
     X = df["body"].values
     y = df["Label"].values
 
+    # --- Train / test split ---
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
+    # --- TF-IDF + Naive Bayes ---
     tfidf = TfidfVectorizer(max_features=5000, stop_words="english")
     X_train_t = tfidf.fit_transform(X_train)
     X_test_t = tfidf.transform(X_test)
@@ -76,6 +75,7 @@ def run_balanced_nb(name: str, filepath: Path):
         )
     )
 
+    # --- Feature introspection ---
     try:
         feature_names = np.array(tfidf.get_feature_names_out())
         log_prob_diff = nb.feature_log_prob_[1] - nb.feature_log_prob_[0]
@@ -87,7 +87,7 @@ def run_balanced_nb(name: str, filepath: Path):
     except Exception as e:
         print(f"(Feature introspection unavailable: {e})")
 
-
+    # --- Confusion matrix (shown interactively as before) ---
     cm = confusion_matrix(y_test, y_pred)
     plt.figure(figsize=(3.4, 3))
     plt.imshow(cm, cmap="coolwarm")
@@ -99,7 +99,7 @@ def run_balanced_nb(name: str, filepath: Path):
     plt.tight_layout()
     plt.show()
 
-
+    # --- 5-fold CV on full dataset ---
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     X_all = tfidf.fit_transform(X)  # TF-IDF on all samples for CV
     nb_cv = MultinomialNB()
@@ -108,7 +108,6 @@ def run_balanced_nb(name: str, filepath: Path):
     print("=== 5-fold CV (Balanced Accuracy) ===")
     print("Fold scores:", np.round(bacc_cv, 3))
     print("Mean Balanced Accuracy:", np.round(bacc_cv.mean(), 3))
-
 
     results_summary.append(
         {
@@ -120,9 +119,35 @@ def run_balanced_nb(name: str, filepath: Path):
     )
 
 
-for name, path in dataset_files.items():
-    run_balanced_nb(name, path)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Naive Bayes baseline on a phishing dataset CSV (requires 'body' and 'label' columns)."
+    )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="Path to CSV file with 'body' and 'label' columns.",
+    )
+    args = parser.parse_args()
 
-print("\n\n===== Overall Comparison =====")
-comp_df = pd.DataFrame(results_summary)
-print(comp_df)
+    # Validate file
+    if not args.dataset:
+        raise ValueError("Error: no dataset supplied. You must list a dataset CSV file.")
+    if not os.path.isfile(args.dataset):
+        raise ValueError(f"Error: file {args.dataset} does not exist. Are you in the right directory?")
+
+    dataset_path = Path(args.dataset)
+    dataset_name = dataset_path.name
+
+    print(f"Loading dataset from {dataset_path}...")
+    run_balanced_nb(dataset_name, dataset_path)
+
+    # Print overall summary (single row, but keeps the old behavior)
+    if results_summary:
+        print("\n\n===== Overall Comparison =====")
+        comp_df = pd.DataFrame(results_summary)
+        print(comp_df)
+
+
+if __name__ == "__main__":
+    main()

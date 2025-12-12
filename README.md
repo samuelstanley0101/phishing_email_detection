@@ -14,12 +14,12 @@ Datasets are stored in `source-datasets`. If you downloaded this repository from
 
 `make-subset.py` generates the subsets used for training. Its use instructions are below. You can run `./generate-subsets.sh` to automatically generate all the subsets used for testing.
 
-## naive_bayes.py
+## NaiveBayes.py
 
-`naive_bayes.py` creates a baseline Multinomial Naive Bayes model from a single CSV dataset containing `body` and `label` columns. It evaluates the model using TF-IDF vectorization, prints performance metrics to the terminal, identifies the most informative phishing and safe tokens, displays a confusion matrix, and performs 5-fold cross-validated balanced accuracy scoring. Here is its usage:
+`NaiveBayes.py` creates a baseline Multinomial Naive Bayes model from a single CSV dataset containing `body` and `label` columns. It evaluates the model using TF-IDF vectorization, prints performance metrics to the terminal, identifies the most informative phishing and safe tokens, displays a confusion matrix, and performs 5-fold cross-validated balanced accuracy scoring. Here is its usage:
 
 ```bash
-python3 naive_bayes.py file
+python3 NaiveBayes.py file
 ```
 
 **file:**  

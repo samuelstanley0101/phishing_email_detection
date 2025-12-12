@@ -14,6 +14,21 @@ Datasets are stored in `source-datasets`. If you downloaded this repository from
 
 `make-subset.py` generates the subsets used for training. Its use instructions are below. You can run `./generate-subsets.sh` to automatically generate all the subsets used for testing.
 
+## naive_bayes.py
+
+`naive_bayes.py` creates a baseline Multinomial Naive Bayes model from a single CSV dataset containing `body` and `label` columns. It evaluates the model using TF-IDF vectorization, prints performance metrics to the terminal, identifies the most informative phishing and safe tokens, displays a confusion matrix, and performs 5-fold cross-validated balanced accuracy scoring. Here is its usage:
+
+```bash
+python3 naive_bayes.py file
+```
+
+**file:**  
+The CSV file to run Naive Bayes on. Must contain `body` and `label` columns. Missing values are automatically removed, and `label` is coerced to an integer.
+
+`naive_bayes.py` loads the dataset, cleans missing values, performs an 80/20 stratified train–test split, vectorizes the email text using TF-IDF, trains a Multinomial Naive Bayes classifier, prints accuracy, balanced accuracy, the classification report, and the top indicative phishing and safe features, displays a confusion matrix, and computes 5-fold stratified cross-validated balanced accuracy.
+
+Python 3.10.3 is recommended. Requirements are listed in `requirements.txt`.
+
 ## logistic.py
 
 `logistic.py` creates a model using logistic regression from a single CSV dataset containing `body` and `label` columns and outputs the results of testing the model to the terminal. It can use TF-IDF or N-Gram vectorization. Here is its usage:
@@ -61,19 +76,3 @@ Python 3.10.3 is recommended. Requirements are listed in `requirements.txt`.
 **files:** The files or directories containing datasets to make a subset out of. All files from any directories specified will be used, but any subdirectories within the directories specified will be ignored unless `-r` is used. **If no files are specified, all files (excluding subdirectories) from the `source-datasets` directory will be used.**
 
 *Credit to [Geeks for Geeks](https://www.geeksforgeeks.org/python/stratified-sampling-in-pandas/) for help with stratified sampling.*
-
-## naive_bayes.py
-
-`naive_bayes.py` creates a baseline Multinomial Naive Bayes model from a single CSV dataset containing `body` and `label` columns. It evaluates the model using TF-IDF vectorization, prints performance metrics to the terminal, identifies the most informative phishing and safe tokens, displays a confusion matrix, and performs 5-fold cross-validated balanced accuracy scoring. Here is its usage:
-
-```bash
-python3 naive_bayes.py file
-```
-
-**file:**  
-The CSV file to run Naive Bayes on. Must contain `body` and `label` columns. Missing values are automatically removed, and `label` is coerced to an integer.
-
-`naive_bayes.py` loads the dataset, cleans missing values, performs an 80/20 stratified train–test split, vectorizes the email text using TF-IDF, trains a Multinomial Naive Bayes classifier, prints accuracy, balanced accuracy, the classification report, and the top indicative phishing and safe features, displays a confusion matrix, and computes 5-fold stratified cross-validated balanced accuracy.
-
-Python 3.10.3 is recommended. Requirements are listed in `requirements.txt`.
-
